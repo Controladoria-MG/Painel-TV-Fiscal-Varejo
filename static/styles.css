@@ -1,0 +1,368 @@
+/* Fonte dentro do pacote (sem depender de internet/Google Fonts na TV) */
+@font-face {
+  font-family: 'Inter';
+  src: url('vendor/inter-latin.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Painel para TV: ocupa exatamente a tela (sem rolagem) e escala com a
+   largura, pra ficar legível de longe em qualquer resolução de TV. */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --red:       #C00000;
+  --red-dark:  #7A0000;
+
+  /* Rampa vermelha dos status (claro -> escuro = leve -> crítico) */
+  --red-light: #F87171; /* Em Aberto */
+  --red-mid:   #DC2626; /* Vencendo Hoje */
+  --red-deep:  #991B1B; /* Em Atraso */
+  --red-soft:  #FEF2F2;
+
+  --bg:            #F1F2F6;
+  --surface:       #FFFFFF;
+  --border:        #ECEDF2;
+  --border-strong: #D5D8E0;
+  --text:        #14171C;
+  --text-muted:  #6B7280;
+  --text-faint:  #4B5363;
+
+  --radius: 1.25rem;
+  --shadow: 0 1px 2px rgba(16,24,40,.04), 0 .4rem 1.4rem rgba(16,24,40,.06);
+  --font: 'Inter', 'Segoe UI', Arial, sans-serif;
+}
+
+/* Escala pelo menor lado: em tela larga e baixa (notebook, janela reduzida)
+   a altura manda, senão o painel passaria da tela. */
+html { font-size: clamp(11px, min(0.95vw, 1.7vh), 40px); }
+
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family: var(--font);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'cv11', 'ss01';
+  background:
+    radial-gradient(ellipse 55% 45% at 0% 0%, rgba(192,0,0,.08), transparent 60%),
+    radial-gradient(ellipse 45% 40% at 100% 100%, rgba(192,0,0,.05), transparent 60%),
+    var(--bg);
+}
+
+.hidden { display: none !important; }
+
+/* ── Painel ── */
+.painel {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 1.1rem;
+  padding: 1.2rem 1.6rem .8rem;
+  animation: surgir .5s ease both;
+}
+@keyframes surgir { from { opacity: 0; transform: translateY(.4rem); } }
+
+/* ── Cabeçalho ── */
+.tv-header {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.1rem 1.7rem;
+  border-radius: var(--radius);
+  background: linear-gradient(115deg, #D10A0A 0%, var(--red) 40%, var(--red-dark) 100%);
+  box-shadow: 0 .6rem 2rem rgba(139,0,0,.28);
+  color: #fff;
+}
+/* Brilho e anéis decorativos no fundo do cabeçalho */
+.tv-header::before,
+.tv-header::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.tv-header::before {
+  width: 26rem; height: 26rem;
+  right: 8%; top: -18rem;
+  background: radial-gradient(circle, rgba(255,255,255,.16), transparent 65%);
+}
+.tv-header::after {
+  width: 18rem; height: 18rem;
+  right: -5rem; bottom: -11rem;
+  border: 2.2rem solid rgba(255,255,255,.06);
+}
+.tv-marca, .tv-relogio { position: relative; z-index: 1; }
+.tv-marca { display: flex; align-items: center; gap: 1.1rem; }
+.tv-logo-wrap {
+  width: 4.2rem; height: 4.2rem; border-radius: 50%; background: #fff; padding: .22rem; flex-shrink: 0;
+  box-shadow: 0 0 0 .3rem rgba(255,255,255,.18), 0 .4rem 1rem rgba(0,0,0,.18);
+}
+.tv-logo { width: 100%; height: 100%; border-radius: 50%; object-fit: contain; display: block; }
+.tv-titulo { font-size: 2.3rem; font-weight: 800; line-height: 1.1; letter-spacing: -.03em; }
+.tv-sub {
+  display: flex; align-items: center; gap: .5rem;
+  font-size: 1rem; font-weight: 500; color: rgba(255,255,255,.85); margin-top: .25rem;
+}
+/* "Ao vivo": ponto pulsando antes do subtítulo */
+.tv-sub::before {
+  content: '';
+  width: .55rem; height: .55rem; border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 0 rgba(255,255,255,.7);
+  animation: pulsar 2.4s ease-out infinite;
+}
+@keyframes pulsar {
+  0%   { box-shadow: 0 0 0 0 rgba(255,255,255,.7); }
+  70%  { box-shadow: 0 0 0 .55rem rgba(255,255,255,0); }
+  100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+}
+.tv-relogio {
+  text-align: right;
+  padding: .55rem 1.2rem;
+  border-radius: .9rem;
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.16);
+  backdrop-filter: blur(6px);
+}
+.tv-hora { font-size: 2.5rem; font-weight: 800; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.tv-data { font-size: .9rem; font-weight: 500; color: rgba(255,255,255,.85); margin-top: .3rem; }
+
+/* ── Placares ── */
+.placares {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1.1rem;
+}
+.placar {
+  --cor: var(--border-strong);
+  position: relative;
+  overflow: hidden;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.15rem 1.35rem 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+}
+.placar.baixado  { --cor: #4B5160; }
+.placar.aberto   { --cor: var(--red-light); }
+.placar.vencehoje{ --cor: var(--red-mid); }
+.placar.atraso   { --cor: var(--red-deep); }
+
+.placar-label {
+  display: flex; align-items: center; gap: .5rem;
+  font-size: .85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--text-faint);
+}
+.placar-label::before {
+  content: '';
+  width: .6rem; height: .6rem; border-radius: 50%;
+  background: var(--cor);
+  box-shadow: 0 0 0 .22rem color-mix(in srgb, var(--cor) 18%, transparent);
+}
+.placar-valor {
+  font-size: 3.7rem;
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -.035em;
+  margin-top: .25rem;
+  font-variant-numeric: tabular-nums;
+}
+.placar.atraso .placar-valor { color: var(--red-deep); }
+.placar.vencehoje .placar-valor { color: var(--red-mid); }
+.placar-desc { font-size: .88rem; font-weight: 600; color: var(--text-muted); }
+
+/* Régua fina embaixo: quanto o status representa do total */
+.placar-medidor {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: .35rem;
+  background: color-mix(in srgb, var(--cor) 14%, transparent);
+}
+.placar-medidor span {
+  display: block; height: 100%;
+  background: var(--cor);
+  border-radius: 0 99px 99px 0;
+  transition: width .8s ease;
+}
+
+/* Destaque: total do mês em vermelho cheio */
+.placar.total {
+  --cor: #fff;
+  background: linear-gradient(140deg, #D10A0A 0%, var(--red) 45%, var(--red-dark) 100%);
+  box-shadow: 0 .5rem 1.6rem rgba(139,0,0,.25);
+  color: #fff;
+}
+.placar.total .placar-label { color: rgba(255,255,255,.85); }
+.placar.total .placar-label::before { background: #fff; box-shadow: 0 0 0 .22rem rgba(255,255,255,.25); }
+.placar.total .placar-desc { color: rgba(255,255,255,.8); }
+.placar.total::after {
+  content: '';
+  position: absolute;
+  width: 12rem; height: 12rem; right: -4rem; top: -5rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,.18), transparent 65%);
+}
+
+.placar-split {
+  display: flex;
+  gap: 1.2rem;
+  margin-top: .6rem;
+  padding-top: .6rem;
+  border-top: 1px solid var(--border);
+}
+.placar.total .placar-split { border-top-color: rgba(255,255,255,.2); }
+.placar-split div { font-size: .82rem; color: var(--text-muted); font-weight: 600; }
+.placar.total .placar-split div { color: rgba(255,255,255,.8); }
+.placar-split b { display: block; font-size: 1.35rem; color: var(--text); font-weight: 800; font-variant-numeric: tabular-nums; }
+.placar.total .placar-split b { color: #fff; }
+
+/* ── Gráficos ── */
+.graficos {
+  display: grid;
+  grid-template-columns: 1fr 1.8fr 1.6fr;
+  gap: 1.1rem;
+  min-height: 0;
+}
+.caixa {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.2rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.caixa-titulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.caixa-titulo h2 {
+  display: flex; align-items: center; gap: .6rem;
+  font-size: 1.12rem; font-weight: 700; letter-spacing: -.01em;
+}
+.caixa-titulo h2::before {
+  content: '';
+  width: .3rem; height: 1.15rem; border-radius: 99px;
+  background: linear-gradient(var(--red), var(--red-dark));
+}
+.caixa-destaque { display: flex; align-items: center; gap: .5rem; font-size: .88rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+.caixa-destaque .chip {
+  padding: .3rem .75rem;
+  border-radius: 99px;
+  background: #F4F5F8;
+}
+.caixa-destaque .chip.hoje { background: var(--red-soft); color: var(--red-deep); }
+.caixa-destaque b { color: var(--text); font-weight: 800; font-size: 1.02rem; margin-left: .2rem; }
+.caixa-destaque .chip.hoje b { color: var(--red-deep); }
+
+.vazio {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: .4rem; text-align: center;
+  font-size: 1.3rem; font-weight: 700; color: var(--text);
+}
+.vazio span { font-size: .95rem; font-weight: 500; color: var(--text-muted); }
+.grafico-wrap { position: relative; flex: 1; min-height: 0; }
+.progresso-anel { position: relative; flex: 1; min-height: 0; }
+
+/* O canvas fora do fluxo: senão o tamanho desenhado na 1ª renderização empurra a
+   caixa e o gráfico não acompanha quando o layout muda (sobra vazio ou vaza). */
+.grafico-wrap canvas,
+.progresso-anel canvas { position: absolute; inset: 0; }
+
+.segmentos { display: flex; flex-direction: column; gap: .75rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.segmento-topo { display: flex; justify-content: space-between; font-size: .92rem; font-weight: 600; color: var(--text-faint); }
+.segmento-topo b { color: var(--text); font-weight: 800; font-variant-numeric: tabular-nums; }
+.segmento-trilho { height: .6rem; border-radius: 99px; background: #F0F1F5; overflow: hidden; margin-top: .35rem; }
+.segmento-barra { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--red-mid), var(--red)); transition: width .8s ease; }
+
+.tv-rodape {
+  display: flex; justify-content: center;
+  font-size: .78rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+.tv-rodape .erro { color: var(--red); font-weight: 700; }
+
+/* ── Carregando ── */
+.carregando {
+  text-align: center;
+  padding: 2rem;
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+.spinner {
+  width: 3rem; height: 3rem;
+  border-radius: 50%;
+  border: .3rem solid var(--border-strong);
+  border-top-color: var(--red);
+  animation: girar .8s linear infinite;
+}
+@keyframes girar { to { transform: rotate(360deg); } }
+
+/* ── Responsivo ──
+   Na TV o painel cabe exatamente na tela. Em telas menores ou em pé
+   (notebook estreito, tablet, celular) ele vira página com rolagem e os
+   gráficos ganham altura fixa. */
+@media (max-width: 1100px), (orientation: portrait) {
+  html { font-size: clamp(12px, 1.6vw, 22px); }
+  html, body { height: auto; overflow: auto; }
+  .painel { height: auto; min-height: 100vh; grid-template-rows: none; align-content: start; }
+
+  /* 3 em cima, 2 embaixo, sem buraco: grade de 6 colunas */
+  .placares { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .placares > * { grid-column: span 2; }
+  .placares > :nth-child(n+4) { grid-column: span 3; }
+  .graficos { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); }
+  .painel > *, .caixa, .placar { min-width: 0; }
+  .caixa-pendencias { grid-column: 1 / -1; }
+  .progresso-anel { flex: none; height: 16rem; }
+  .grafico-wrap { flex: none; height: 20rem; }
+}
+
+@media (max-width: 700px) {
+  html { font-size: 13px; }
+  .painel { gap: .8rem; padding: .8rem; }
+
+  .tv-header { flex-direction: column; align-items: stretch; gap: .8rem; padding: 1rem; }
+  .tv-relogio { text-align: left; display: flex; align-items: baseline; gap: .8rem; padding: .5rem .8rem; }
+  .tv-data { margin-top: 0; }
+  .tv-logo-wrap { width: 3.2rem; height: 3.2rem; }
+  .tv-titulo { font-size: 1.7rem; }
+  .tv-hora { font-size: 1.8rem; }
+
+  .placares { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
+  .placares > *, .placares > :nth-child(n+4) { grid-column: auto; }
+  .placares > :first-child { grid-column: 1 / -1; }
+  .placar { padding: .9rem 1rem 1.1rem; }
+  .placar-valor { font-size: 2.6rem; }
+
+  .graficos { grid-template-columns: minmax(0, 1fr); gap: .8rem; }
+  .caixa { padding: .9rem 1rem; }
+  .caixa-titulo { flex-direction: column; align-items: flex-start; gap: .5rem; }
+  .caixa-destaque { white-space: normal; flex-wrap: wrap; }
+  .grafico-wrap { height: 18rem; }
+  .caixa-pendencias .grafico-wrap { height: 24rem; }
+}

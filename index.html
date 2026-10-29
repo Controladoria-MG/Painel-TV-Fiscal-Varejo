@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Escrita Fiscal Varejo - Painel de Tarefas</title>
+  <link rel="stylesheet" href="static/styles.css?v=20260929d" />
+</head>
+<body>
+
+  <!-- Painel -->
+  <div class="painel hidden" id="painel">
+    <header class="tv-header">
+      <div class="tv-marca">
+        <div class="tv-logo-wrap"><img src="data/imagens/logo.png" alt="MG" class="tv-logo" /></div>
+        <div>
+          <h1 class="tv-titulo" id="tv-titulo"></h1>
+          <p class="tv-sub" id="tv-sub"></p>
+        </div>
+      </div>
+      <div class="tv-relogio">
+        <div class="tv-hora" id="tv-hora"></div>
+        <div class="tv-data" id="tv-data"></div>
+      </div>
+    </header>
+
+    <section class="placares" id="placares"></section>
+
+    <section class="graficos">
+      <div class="caixa caixa-progresso">
+        <div class="caixa-titulo"><h2>Concluído no mês</h2></div>
+        <div class="progresso-anel"><canvas id="grafico-progresso"></canvas></div>
+        <div class="segmentos" id="segmentos"></div>
+      </div>
+      <div class="caixa caixa-dias">
+        <div class="caixa-titulo"><h2 id="titulo-dias">Tarefas baixadas por dia</h2><span class="caixa-destaque" id="dias-hoje"></span></div>
+        <div class="grafico-wrap"><canvas id="grafico-dias"></canvas></div>
+      </div>
+      <div class="caixa caixa-pendencias">
+        <div class="caixa-titulo"><h2 id="titulo-pendencias">Principais tarefas em aberto vencendo hoje</h2></div>
+        <div class="grafico-wrap">
+          <canvas id="grafico-pendencias"></canvas>
+          <div class="vazio hidden" id="pendencias-vazio">Nenhuma tarefa vencendo hoje.<span>Tudo o que vence hoje já foi baixado.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="tv-rodape" id="tv-rodape"></footer>
+  </div>
+
+  <div class="carregando" id="carregando">
+    <div class="spinner"></div>
+    <span id="carregando-texto">Carregando dados...</span>
+  </div>
+
+  <script src="static/vendor/xlsx.full.min.js"></script>
+  <script src="static/vendor/chart.umd.min.js"></script>
+  <script src="static/app.js?v=20260929d"></script>
+</body>
+</html>
