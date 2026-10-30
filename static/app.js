@@ -24,7 +24,7 @@ const UNIDADE = {
     : 'https://controladoria-mg.github.io/Portal-das-tarefas/dados/base/sao_paulo.xlsx',
 };
 
-const ATUALIZAR_DADOS_MIN   = 10;  // busca a planilha de novo
+const ATUALIZAR_DADOS_MIN   = 1;   // pergunta se a planilha mudou
 const RECARREGAR_PAGINA_H   = 6;   // recarga completa (evita acúmulo de memória na TV)
 
 const COR = {
@@ -42,6 +42,8 @@ let linhas = [];
 let dataBase = '';
 let mesRef = null;       // 1º dia do mês de vencimento que a base cobre
 let jaCarregou = false;
+let versaoArquivo = '';  // ETag/Last-Modified da última planilha lida
+let assinatura = '';     // o que está desenhado na tela agora
 const graficos = {};
 
 // ── Utilitários ───────────────────────────────────────────
@@ -78,9 +80,25 @@ function contar(rows) {
 }
 
 // ── Carregamento ──────────────────────────────────────────
+function versaoDe(resp) {
+  return resp.headers.get('ETag') || resp.headers.get('Last-Modified') || '';
+}
+
+// Retorna false quando a planilha é a mesma da última leitura. A planilha tem
+// vários MB: a cada rodada só os cabeçalhos são consultados, e ela só é baixada
+// de novo quando muda (ou na virada do dia, que muda o "Vencendo Hoje").
 async function carregar() {
+  const dia = normData(new Date()).getTime();
+  if (versaoArquivo) {
+    try {
+      const cab = await fetch(UNIDADE.arquivo, { method: 'HEAD', cache: 'no-store' });
+      if (cab.ok && versaoDe(cab) && `${versaoDe(cab)}|${dia}` === versaoArquivo) return false;
+    } catch (_) { /* sem HEAD: segue e baixa inteira */ }
+  }
+
   const resp = await fetch(UNIDADE.arquivo, { cache: 'no-store' });
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  versaoArquivo = versaoDe(resp) ? `${versaoDe(resp)}|${dia}` : '';
   const lastMod = resp.headers.get('Last-Modified');
   if (lastMod) {
     const d = new Date(lastMod);
@@ -116,6 +134,12 @@ async function carregar() {
   // relógio: na virada do mês a base ainda é a do mês anterior até o robô rodar.
   const k = Object.entries(porMes).sort((a, b) => b[1] - a[1])[0]?.[0];
   mesRef = k !== undefined ? new Date(Math.floor(k / 12), k % 12, 1) : new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+
+  // Planilha republicada com os mesmos números não redesenha a tela.
+  const nova = JSON.stringify([dia, mesRef, linhas]);
+  if (nova === assinatura) return false;
+  assinatura = nova;
+  return true;
 }
 
 // ── Cabeçalho e relógio ───────────────────────────────────
@@ -446,6 +470,7 @@ function rodape(erro) {
 }
 
 const TENTAR_DE_NOVO_SEG = 60;   // se a 1ª carga falhar (TV ligou sem rede, etc.)
+let recarregarPendente = false;
 
 // Versão do visual que está rodando (o ?v= do app.js no index.html). Quando o
 // index.html publicado tiver outra versão, a página se recarrega sozinha —
@@ -468,8 +493,12 @@ async function atualizar() {
   // carregada nunca recarrega de novo em seguida.
   if (jaCarregou) await conferirVersaoNova();
   try {
-    await carregar();
-    renderTudo();
+    const mudou = await carregar();
+    // Só redesenha (e a tela só "pisca") quando os dados mudaram de verdade.
+    if (mudou) {
+      if (recarregarPendente) { location.reload(); return; }
+      renderTudo();
+    }
     rodape();
     jaCarregou = true;
     document.getElementById('carregando').classList.add('hidden');
@@ -516,7 +545,8 @@ async function iniciar() {
   await atualizar();
 
   setInterval(() => { if (jaCarregou) atualizar(); }, ATUALIZAR_DADOS_MIN * 60 * 1000);
-  setTimeout(() => location.reload(), RECARREGAR_PAGINA_H * 60 * 60 * 1000);
+  // A recarga completa espera a próxima mudança nos dados, pra não piscar à toa.
+  setTimeout(() => { recarregarPendente = true; }, RECARREGAR_PAGINA_H * 60 * 60 * 1000);
 
   manterTelaLigada();
   document.addEventListener('visibilitychange', manterTelaLigada);
