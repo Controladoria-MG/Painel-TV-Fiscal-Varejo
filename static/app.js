@@ -484,6 +484,20 @@ async function atualizar() {
   }
 }
 
+// Pede ao navegador para não apagar a tela nem ligar a proteção de tela enquanto
+// o painel estiver aberto. O pedido cai sozinho quando a aba fica escondida
+// (TV troca de entrada, etc.), então é refeito ao voltar e de tempos em tempos.
+// Não mexe no desligamento automático da TV — esse é no menu da própria TV.
+let travaTela = null;
+
+async function manterTelaLigada() {
+  if (!('wakeLock' in navigator) || document.visibilityState !== 'visible' || travaTela) return;
+  try {
+    travaTela = await navigator.wakeLock.request('screen');
+    travaTela.addEventListener('release', () => { travaTela = null; });
+  } catch (_) { /* navegador recusou: tenta de novo na próxima rodada */ }
+}
+
 // ── Início ────────────────────────────────────────────────
 async function iniciar() {
   document.title = `${PAINEL.nome} - Painel de Tarefas`;
@@ -503,6 +517,10 @@ async function iniciar() {
 
   setInterval(() => { if (jaCarregou) atualizar(); }, ATUALIZAR_DADOS_MIN * 60 * 1000);
   setTimeout(() => location.reload(), RECARREGAR_PAGINA_H * 60 * 60 * 1000);
+
+  manterTelaLigada();
+  document.addEventListener('visibilitychange', manterTelaLigada);
+  setInterval(manterTelaLigada, 60 * 1000);
 
   let timerResize = null;
   window.addEventListener('resize', () => {
